@@ -1,0 +1,10 @@
+@font-face {
+    font-family: 'Roboto';
+    src: url('./Roboto-Regular.ttf');
+}
+
+body {
+    font-family: 'Roboto';
+    background-color: $color1;
+    color: $color2;
+}
