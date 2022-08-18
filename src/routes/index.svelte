@@ -9,7 +9,7 @@
 </script>
 
 <script lang="ts">
-	import PartyInfo from '../lib/PartyInfo.svelte';
+	import PartyInfo from '$lib/PartyInfo.svelte';
 	import { hidePopup } from '../store';
 	export let allArguments: Argument[];
 
@@ -31,9 +31,10 @@
 </script>
 
 <div class="arguments">
+	<h1>Political Side</h1>
 	{#each Object.entries(allArguments) as [id, arg]}
 		<div class="argument">
-			<h1>{arg.title}</h1>
+			<h2>{arg.title}</h2>
 			<p>{arg.description}</p>
 
 			<div class="views">
@@ -94,6 +95,7 @@
 
 						img {
 							border-radius: 50%;
+							cursor: pointer;
 						}
 					}
 				}
