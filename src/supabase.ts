@@ -30,6 +30,10 @@ export type Argument = {
 	};
 };
 
+export type Arguments = {
+	[id: string]: Argument;
+}
+
 export type Position = {
 	id: number;
 	created_at: Date;
@@ -42,7 +46,7 @@ function addToAllArguments(id: number, agrees: boolean | null, party: Party, lis
 	list[id]['parties'][agrees === null ? 'neutral' : agrees ? 'agrees' : 'disagrees'].push(party);
 }
 
-export const getArguments = async (): Promise<Argument[]> => {
+export const getArguments = async (): Promise<Arguments> => {
 	const { data: positions, error } = await supabase
 		.from('position')
 		.select('*, party (*), argument (*)');
@@ -50,7 +54,7 @@ export const getArguments = async (): Promise<Argument[]> => {
 		throw 'Error getting positions';
 	}
 
-	let allArguments: Argument[] = Object();
+	let allArguments: Arguments = Object();
 	for (const position of positions) {
 		if (allArguments[position.argument.id]) {
             addToAllArguments(position.argument.id, position.agrees, position.party, allArguments);

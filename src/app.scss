@@ -8,6 +8,10 @@ html, body {
     padding: 0;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: 'Roboto';
     background-color: $color1;
