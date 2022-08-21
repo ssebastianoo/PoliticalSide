@@ -5,11 +5,11 @@
 
 	export let arg: Argument;
 
-	let showParty: { argument: number; party: string } = { argument: 0, party: '' };
+	let showParty: { argument: string; party: string } = { argument: '', party: '' };
 
 	hidePopup.subscribe((v) => {
 		if (v) {
-			showParty = { argument: 0, party: '' };
+			showParty = { argument: '', party: '' };
 			hidePopup.set(false);
 		}
 	});

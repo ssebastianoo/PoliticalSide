@@ -13,16 +13,10 @@ export type Party = {
 };
 
 export type Argument = {
-	id: number;
+	id: string;
 	created_at: Date;
 	title: string;
 	description: string;
-	// parties: [
-	//     {
-	//         info: Party,
-	//         pro: boolean
-	//     }
-	// ];
 	parties: {
 		agrees: Party[];
 		disagrees: Party[];
@@ -32,7 +26,7 @@ export type Argument = {
 
 export type Arguments = {
 	[id: string]: Argument;
-}
+};
 
 export type Position = {
 	id: number;
@@ -42,7 +36,13 @@ export type Position = {
 	agrees: boolean | null;
 };
 
-function addToAllArguments(id: number, agrees: boolean | null, party: Party, list: Argument[]) {
+export const getParties = async (): Promise<Party[]> => {
+	const { data, error } = await supabase.from('party').select('*');
+	const parties = data as Party[];
+	return parties;
+};
+
+function addToAllArguments(id: number, agrees: boolean | null, party: Party, list: Arguments) {
 	list[id]['parties'][agrees === null ? 'neutral' : agrees ? 'agrees' : 'disagrees'].push(party);
 }
 
@@ -57,7 +57,7 @@ export const getArguments = async (): Promise<Arguments> => {
 	let allArguments: Arguments = Object();
 	for (const position of positions) {
 		if (allArguments[position.argument.id]) {
-            addToAllArguments(position.argument.id, position.agrees, position.party, allArguments);
+			addToAllArguments(position.argument.id, position.agrees, position.party, allArguments);
 		} else {
 			allArguments[position.argument.id] = {
 				id: position.argument.id,
@@ -67,7 +67,7 @@ export const getArguments = async (): Promise<Arguments> => {
 				parties: {
 					agrees: [],
 					disagrees: [],
-                    neutral: []
+					neutral: []
 				}
 			};
 			addToAllArguments(position.argument.id, position.agrees, position.party, allArguments);
@@ -75,4 +75,23 @@ export const getArguments = async (): Promise<Arguments> => {
 	}
 
 	return allArguments;
+};
+
+export const setPartyPosition = async (
+	partyInitial: string,
+	argumentId: string,
+	agrees: boolean | null
+): Promise<void> => {
+	await supabase.from('position').upsert({
+		party: partyInitial,
+		argument: argumentId,
+		agrees: agrees
+	});
+};
+
+export const removePartyPosition = async (
+	partyInitial: string,
+	argumentId: string
+): Promise<void> => {
+	await supabase.from('position').delete().match({ party: partyInitial, argument: argumentId });
 };
