@@ -51,6 +51,7 @@ export const getArguments = async (): Promise<Arguments> => {
 		.from('position')
 		.select('*, party (*), argument (*)');
 	if (error) {
+		console.log(error);
 		throw 'Error getting positions';
 	}
 
@@ -73,8 +74,43 @@ export const getArguments = async (): Promise<Arguments> => {
 			addToAllArguments(position.argument.id, position.agrees, position.party, allArguments);
 		}
 	}
-
 	return allArguments;
+};
+
+export const buildArguments = async (): Promise<Arguments> => {
+	const { data: rawArguments, error } = await supabase.from('argument').select('*');
+	let buildedArguments: Arguments = Object();
+
+	for (const arg of rawArguments!) {
+		buildedArguments[arg.id] = {
+			id: arg.id,
+			created_at: arg.created_at,
+			title: arg.title,
+			description: arg.description,
+			parties: {
+				agrees: [],
+				disagrees: [],
+				neutral: []
+			}
+		};
+
+		const { data: positions, error } = await supabase
+			.from('position')
+			.select('*, party (*)')
+			.eq('argument', arg.id);
+
+		for (const position of positions!) {
+			if (position.agrees === true) {
+				buildedArguments[arg.id]['parties']['agrees'].push(position.party);
+			} else if (position.agrees === false) {
+				buildedArguments[arg.id]['parties']['disagrees'].push(position.party);
+			} else if (position.agrees === null) {
+				buildedArguments[arg.id]['parties']['neutral'].push(position.party);
+			}
+		}
+	}
+
+	return buildedArguments;
 };
 
 export const setPartyPosition = async (
@@ -82,16 +118,60 @@ export const setPartyPosition = async (
 	argumentId: string,
 	agrees: boolean | null
 ): Promise<void> => {
-	await supabase.from('position').upsert({
+	const { data, error } = await supabase.from('position').upsert({
 		party: partyInitial,
 		argument: argumentId,
 		agrees: agrees
 	});
+	if (error) {
+		throw 'Error setting position';
+	}
 };
 
 export const removePartyPosition = async (
 	partyInitial: string,
 	argumentId: string
 ): Promise<void> => {
-	await supabase.from('position').delete().match({ party: partyInitial, argument: argumentId });
+	const { data, error } = await supabase
+		.from('position')
+		.delete()
+		.match({ party: partyInitial, argument: argumentId });
+	if (error) {
+		throw 'Error removing position';
+	}
 };
+
+export const createArgument = async (
+	id: string,
+	title: string,
+	description: string
+): Promise<Argument> => {
+	const { data, error } = await supabase.from('argument').insert({
+		id,
+		title,
+		description
+	});
+	if (error) {
+		if (error.code === '23505') {
+			throw { message: 'Argument already exists', code: 'alreadyExists' };
+		}
+		throw { message: 'Error creating argument', code: error.code };
+	}
+
+	return {
+		id: data[0].id,
+		created_at: data[0].created_at,
+		title: data[0].title,
+		description: data[0].description,
+		parties: {
+			agrees: [],
+			disagrees: [],
+			neutral: []
+		}
+	};
+};
+
+export const deleteArgument = async (id: string): Promise<void> => {
+	await supabase.from('position').delete().match({ argument: id });
+	await supabase.from('argument').delete().match({ id });
+}

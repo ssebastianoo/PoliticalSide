@@ -13,7 +13,7 @@
 	});
 </script>
 
-<div class={"popup " + (showPopup ? "show-popup" : "hide-popup")}>
+<div class={"popup " + (showPopup ? "show-popup" : "")}>
     <h2>{text}</h2>
 </div>
 
@@ -21,26 +21,14 @@
     @keyframes show-popup {
         0% {
             opacity: 0;
-            transform: translate(-50%, 100vh);
         }
         100% {
             opacity: 1;
-            transform: translate(-50%, -50%);
-        }
-    }
-
-    @keyframes hide-popup {
-        0% {
-            opacity: 1;
-            transform: translate(-50%, -50%);
-        }
-        100% {
-            opacity: 0;
-            transform: translate(-50%, 100vh);
         }
     }
 
     .popup {
+        opacity: 0;
         position: fixed;
         top: 50%;
 		left: 50%;
@@ -57,9 +45,5 @@
 
     .show-popup {
         animation: show-popup .5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-    }
-
-    .hide-popup {
-        animation: hide-popup .5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
     }
 </style>

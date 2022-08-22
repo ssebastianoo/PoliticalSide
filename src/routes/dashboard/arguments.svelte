@@ -1,16 +1,16 @@
 <script lang="ts" context="module">
-	import { getArguments, getParties } from '../supabase';
+	import { buildArguments, getParties, deleteArgument } from '../../supabase';
 
 	export async function load() {
-		const allArguments = await getArguments();
+		const allArguments = await buildArguments();
 		const parties = await getParties();
 		return { props: { allArguments, parties } };
 	}
 </script>
 
 <script lang="ts">
-	import { setPartyPosition, removePartyPosition } from '../supabase';
-	import type { Arguments, Party } from '../supabase';
+	import { setPartyPosition, removePartyPosition, createArgument } from '../../supabase';
+	import type { Argument, Arguments, Party } from '../../supabase';
 	export let allArguments: Arguments, parties: Party[];
 
 	const moveParty = async (e: Event, argumentID: string, view: string) => {
@@ -25,13 +25,47 @@
 
 		await setPartyPosition(partyInitial, argumentID, agrees);
 	};
+
+	const handleForm = async (e: SubmitEvent) => {
+		const target = e.target as HTMLFormElement;
+		try {
+			const newArgument = await createArgument(
+				target._id.value,
+				target._title.value,
+				target.description.value
+			);
+			(e.target as HTMLFormElement).reset();
+			allArguments[newArgument.id] = newArgument;
+		} catch (err: any) {
+			if (err.code === 'alreadyExists') {
+				return alert('Argument already exists');
+			} else {
+				return alert('Something went wrong');
+			}
+		}
+	};
 </script>
 
 <div class="dashboard">
+	<div class="create-argument">
+		<h3>create argument</h3>
+		<form on:submit|preventDefault={handleForm}>
+			<input type="text" placeholder="id" name="_id" required />
+			<input type="text" placeholder="name" name="_title" required />
+			<input type="text" placeholder="description" name="description" required />
+			<button type="submit">create</button>
+		</form>
+	</div>
+	<hr />
+
 	{#each Object.entries(allArguments) as [id, arg]}
-		<input type="text" name="title" placeholder="title" value={arg.title} />
+		<input type="text" name="_id" placeholder="id" value={arg.id} />
+		<br />
+		<input type="text" name="_title" placeholder="title" value={arg.title} />
 		<br />
 		<textarea type="text" name="description" placeholder="description" value={arg.description} />
+		<br>
+		<button on:click={async () => {await deleteArgument(id)}}>delete</button>
 		<h3>d'accordo</h3>
 		{#each Object.entries(arg.parties) as [view, viewParties]}
 			<h3>{view}</h3>
@@ -74,13 +108,13 @@
 		}
 	}
 
-    .parties {
-        display: flex;
-        gap: 10px;
+	.parties {
+		display: flex;
+		gap: 10px;
 
-        .party {
-            display: flex;
-            flex-direction: column;
-        }
-    }
+		.party {
+			display: flex;
+			flex-direction: column;
+		}
+	}
 </style>
