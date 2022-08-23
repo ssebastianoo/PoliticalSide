@@ -15,6 +15,7 @@
 	});
 
 	const showHideParty = (party: Party, argument: Argument) => {
+		hidePopup.set(true);
 		showParty = {
 			argument: argument.id,
 			party: party.initial
