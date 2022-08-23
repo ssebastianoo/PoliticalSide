@@ -171,7 +171,39 @@ export const createArgument = async (
 	};
 };
 
+export const updateArgument = async (
+	oldID: string,
+	newID: string,
+	title: string,
+	description: string
+): Promise<void> => {
+	if (oldID !== newID) {
+		const {data, error} =  await supabase.from('argument').insert({
+			id: newID,
+			title,
+			description
+		});
+
+		if (error) {
+			if (error.code === '23505') {
+				throw { message: 'Argument already exists', code: 'alreadyExists' };
+			}
+			throw { message: 'Error creating argument', code: error.code };
+		}
+
+		await supabase
+			.from('position')
+			.update({
+				argument: newID
+			})
+			.match({ argument: oldID });
+		await supabase.from('argument').delete().match({ id: oldID });
+	} else {
+		await supabase.from('argument').update({ id: newID, title, description }).match({ id: oldID });
+	}
+};
+
 export const deleteArgument = async (id: string): Promise<void> => {
 	await supabase.from('position').delete().match({ argument: id });
 	await supabase.from('argument').delete().match({ id });
-}
+};

@@ -9,8 +9,14 @@
 </script>
 
 <script lang="ts">
-	import { supabase, setPartyPosition, removePartyPosition, createArgument } from '../../supabase';
-	import type { Argument, Arguments, Party } from '../../supabase';
+	import {
+		supabase,
+		setPartyPosition,
+		removePartyPosition,
+		createArgument,
+		updateArgument
+	} from '../../supabase';
+	import type { Arguments, Party } from '../../supabase';
 	export let allArguments: Arguments, parties: Party[];
 	import { onMount } from 'svelte';
 	let loaded: boolean = false;
@@ -47,7 +53,11 @@
 		await checkIfAuthenticated();
 	};
 
-	const moveParty = async (e: Event, argumentID: string, view: string) => {
+	const moveParty = async (
+		e: Event,
+		argumentID: string,
+		view: string
+	) => {
 		const target = e.target as HTMLSelectElement;
 
 		let agrees: boolean | null;
@@ -58,9 +68,25 @@
 		const partyInitial = target.value;
 
 		await setPartyPosition(partyInitial, argumentID, agrees);
+		for (const _view of Object.keys(allArguments[argumentID].parties)) {
+			// @ts-ignore
+			allArguments[argumentID].parties[_view] = allArguments[argumentID].parties[_view].filter(
+				(party: Party) => party.initial !== partyInitial
+			);
+		}
+
+		const { data: parties, error } = await supabase
+			.from('party')
+			.select('*')
+			.eq('initial', partyInitial);
+
+		// @ts-ignore
+		if (parties) allArguments[argumentID].parties[view].push(parties[0]);
+
+		allArguments = allArguments;
 	};
 
-	const handleForm = async (e: SubmitEvent) => {
+	const createNewArgument = async (e: SubmitEvent) => {
 		const target = e.target as HTMLFormElement;
 		try {
 			const newArgument = await createArgument(
@@ -77,6 +103,26 @@
 				return alert('Something went wrong');
 			}
 		}
+		alert('Argument created');
+	};
+
+	const updateArgumentData = async (argumentID: string, e: Event) => {
+		const target = e.target as HTMLFormElement;
+		try {
+			await updateArgument(
+				argumentID,
+				target._id.value,
+				target._title.value,
+				target.description.value
+			);
+		} catch (err: any) {
+			if (err.code === 'alreadyExists') {
+				return alert('Argument already exists');
+			} else {
+				return alert('Something went wrong');
+			}
+		}
+		alert('Argument updated');
 	};
 </script>
 
@@ -91,11 +137,17 @@
 		</form>
 	</div>
 {:else}
-<button on:click={async () => {await supabase.auth.signOut();user=null;authenticated=false;}}>signout</button>
+	<button
+		on:click={async () => {
+			await supabase.auth.signOut();
+			user = null;
+			authenticated = false;
+		}}>signout</button
+	>
 	<div class="dashboard">
 		<div class="create-argument">
 			<h3>create argument</h3>
-			<form on:submit|preventDefault={handleForm}>
+			<form on:submit|preventDefault={createNewArgument}>
 				<input type="text" placeholder="id" name="_id" required />
 				<input type="text" placeholder="name" name="_title" required />
 				<input type="text" placeholder="description" name="description" required />
@@ -105,11 +157,24 @@
 		<hr />
 
 		{#each Object.entries(allArguments) as [id, arg]}
-			<input type="text" name="_id" placeholder="id" value={arg.id} />
-			<br />
-			<input type="text" name="_title" placeholder="title" value={arg.title} />
-			<br />
-			<textarea type="text" name="description" placeholder="description" value={arg.description} />
+			<form
+				on:submit|preventDefault={async (e) => {
+					await updateArgumentData(arg.id, e);
+				}}
+			>
+				<input type="text" name="_id" placeholder="id" value={arg.id} />
+				<br />
+				<input type="text" name="_title" placeholder="title" value={arg.title} />
+				<br />
+				<textarea
+					type="text"
+					name="description"
+					placeholder="description"
+					value={arg.description}
+				/>
+				<br />
+				<button type="submit">save</button>
+			</form>
 			<br />
 			<button
 				on:click={async () => {
@@ -140,6 +205,8 @@
 								<button
 									on:click={async () => {
 										await removePartyPosition(party.initial, id);
+										// @ts-ignore
+										allArguments[arg.id].parties[view] = allArguments[arg.id].parties[view].filter(x => x.initial !== party.initial);
 									}}>remove</button
 								>
 							</div>
