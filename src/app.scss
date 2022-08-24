@@ -1,19 +1,29 @@
 @font-face {
-    font-family: 'Roboto';
-    src: url('/Roboto-Regular.ttf');
+	font-family: 'Roboto';
+	src: url('/Roboto-Regular.ttf');
 }
 
-html, body {
-    margin: 0;
-    padding: 0;
+html,
+body {
+	margin: 0;
+	padding: 0;
 }
 
 html {
-    scroll-behavior: smooth;
+	scroll-behavior: smooth;
 }
 
 body {
-    font-family: 'Roboto';
-    background-color: $color1;
-    color: $color2;
+	font-family: 'Roboto';
+	background-color: $color1;
+	color: $color2;
+}
+
+::-webkit-scrollbar {
+	width: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+	background: $color3;
+	border-radius: 10px;
 }
