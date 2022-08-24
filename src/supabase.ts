@@ -39,6 +39,7 @@ export type Position = {
 export const getParties = async (): Promise<Party[]> => {
 	const { data, error } = await supabase.from('party').select('*');
 	const parties = data as Party[];
+	parties.sort((a, b) => a.name.localeCompare(b.name));
 	return parties;
 };
 
@@ -178,7 +179,7 @@ export const updateArgument = async (
 	description: string
 ): Promise<void> => {
 	if (oldID !== newID) {
-		const {data, error} =  await supabase.from('argument').insert({
+		const { data, error } = await supabase.from('argument').insert({
 			id: newID,
 			title,
 			description
@@ -206,4 +207,35 @@ export const updateArgument = async (
 export const deleteArgument = async (id: string): Promise<void> => {
 	await supabase.from('position').delete().match({ argument: id });
 	await supabase.from('argument').delete().match({ id });
+};
+
+export const createParty = async (
+	initial: string,
+	name: string,
+	orientation: string
+): Promise<Party> => {
+	const { data, error } = await supabase.from('party').insert({
+		initial,
+		name,
+		orientation
+	});
+	if (error) {
+		if (error.code === '23505') {
+			throw { message: 'Party already exists', code: 'alreadyExists' };
+		}
+		throw { message: 'Error creating party', code: error.code };
+	}
+	return data[0] as Party;
+};
+
+export const updateParty = async (
+	oldInitial: string,
+	newInitial: string,
+	name: string,
+	orientation: string
+): Promise<void> => {
+	await supabase
+		.from('party')
+		.update({ initial: newInitial, name, orientation })
+		.match({ initial: oldInitial });
 };
