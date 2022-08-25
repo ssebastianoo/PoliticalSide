@@ -24,6 +24,7 @@
 			parties.push(party);
 			parties.sort((a, b) => a.name.localeCompare(b.name));
 			parties = parties;
+			(e.target as HTMLFormElement).reset();
 		} catch (error: any) {
 			alert(error.message);
 		}
@@ -49,9 +50,9 @@
 <form on:submit|preventDefault={handlePartyCreationForm}>
 	<div class="create-party">
 		<input type="file" name="logo" accept="image/*" />
-		<input type="text" name="initial" placeholder="initial" />
-		<input type="text" name="_name" placeholder="name" />
-		<input type="text" name="orientation" placeholder="orientation" />
+		<input type="text" name="initial" placeholder="initial" required />
+		<input type="text" name="_name" placeholder="name" required />
+		<input type="text" name="orientation" placeholder="orientation" required />
 		<button type="submit">create</button>
 	</div>
 </form>
