@@ -117,6 +117,8 @@
 	<button
 		on:click={async () => {
 			await deleteArgument(id);
+			delete allArguments[id];
+			allArguments = allArguments;
 		}}>delete</button
 	>
 	<h3>d'accordo</h3>

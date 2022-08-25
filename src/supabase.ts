@@ -209,17 +209,38 @@ export const deleteArgument = async (id: string): Promise<void> => {
 	await supabase.from('argument').delete().match({ id });
 };
 
+const checkFileType = (filename: string) => {
+	return ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(filename.split('.').pop()!.toLowerCase());
+};
+
 export const createParty = async (
 	initial: string,
 	name: string,
-	orientation: string
+	orientation: string,
+	logo: File | undefined
 ): Promise<Party> => {
+	let logoUrl: string | null = null;
+
+	if (logo) {
+		if (!checkFileType(logo.name)) {
+			throw { message: 'Invalid file type', code: 'invalidFileType' };
+		}
+
+		await supabase.storage.from('parties').upload(initial, logo, {
+			upsert: true
+		});
+		const { data: logoData, error } = await supabase.storage.from('parties').getPublicUrl(initial);
+		logoUrl = logoData ? logoData.publicURL : null;
+	}
+
 	const { data, error } = await supabase.from('party').insert({
 		initial,
 		name,
-		orientation
+		orientation,
+		logo: logoUrl
 	});
 	if (error) {
+		await supabase.storage.from('parties').remove([initial]);
 		if (error.code === '23505') {
 			throw { message: 'Party already exists', code: 'alreadyExists' };
 		}
@@ -232,10 +253,37 @@ export const updateParty = async (
 	oldInitial: string,
 	newInitial: string,
 	name: string,
-	orientation: string
+	orientation: string,
+	logo: File | undefined
 ): Promise<void> => {
-	await supabase
-		.from('party')
-		.update({ initial: newInitial, name, orientation })
-		.match({ initial: oldInitial });
+	if (!logo) {
+		await supabase
+			.from('party')
+			.update({ initial: newInitial, name, orientation })
+			.match({ initial: oldInitial });
+	} else {
+		if (!checkFileType(logo.name)) {
+			throw { message: 'Invalid file type', code: 'invalidFileType' };
+		}
+
+		if (newInitial !== oldInitial) {
+			await supabase.storage.from('parties').remove([oldInitial]);
+		}
+
+		await supabase.storage.from('parties').upload(newInitial, logo, {
+			upsert: true
+		});
+		const { data: logoData, error } = await supabase.storage.from('parties').getPublicUrl(newInitial);
+		const logoUrl = logoData ? logoData.publicURL : null;
+		await supabase
+			.from('party')
+			.update({ initial: newInitial, name, orientation, logo: logoUrl })
+			.match({ initial: oldInitial });
+	}
+};
+
+export const deleteParty = async (initial: string): Promise<void> => {
+	await supabase.from('position').delete().match({ party: initial });
+	await supabase.from('party').delete().match({ initial });
+	await supabase.storage.from('parties').remove([initial]);
 };
