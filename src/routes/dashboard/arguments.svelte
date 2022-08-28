@@ -16,7 +16,7 @@
 		createArgument,
 		updateArgument
 	} from '../../supabase';
-	import type { Arguments, Party } from '../../supabase';
+	import type { Argument, Arguments, Party } from '../../supabase';
 	export let allArguments: Arguments, parties: Party[];
 
 	const moveParty = async (e: Event, argumentID: string, view: string) => {
@@ -86,6 +86,14 @@
 		}
 		alert('Argument updated');
 	};
+
+	const handleRemoveParty = async (party: Party, arg: Argument, view: string) => {
+		await removePartyPosition(party.initial, arg.id);
+
+		const v = view as 'agrees' | 'disagrees' | 'neutral';
+
+		allArguments[arg.id].parties[v] = allArguments[arg.id].parties[v].filter((x: Party) => x.initial !== party.initial);
+	};
 </script>
 
 <div class="create-argument">
@@ -144,14 +152,7 @@
 						<img src={party.logo} alt="party logo" width="40" />
 						<button
 							on:click={async () => {
-								await removePartyPosition(party.initial, id);
-								// @ts-ignore
-								allArguments[arg.id].parties[view] = allArguments[arg.id].parties[view].filter(
-									// @ts-ignore
-									(x) => {
-										x.initial !== party.initial;
-									}
-								);
+								await handleRemoveParty(party, arg, view);
 							}}>remove</button
 						>
 					</div>
